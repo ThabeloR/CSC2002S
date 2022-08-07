@@ -1,3 +1,3 @@
-pubilc class MedianFilterSerial{
+public class MedianFilterSerial{
 
 }

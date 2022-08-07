@@ -11,18 +11,24 @@ JAVA=usr/bin/java
 $(BINDIR)/%.class: $(SRCDIR)/%.java
 	$(JAVAC) -d $(BINDIR)/ -cp $(BINDIR) $<
 	
-CLASSES=MeanFilterSerial.class MeanFilterParallel.class MedianFilterSerial.class MedianFilterParallel.class
+CLASSES=MeanFilterSerial.class\
+	MeanFilterParallel.class\
+	MedianFilterSerial.class\
+	MedianFilterParallel.class
 
 CLASS_FILES=$(CLASSES:%.class=$(BINDIR)/%.class)
 	
 
 default: $(CLASS_FILES)
 	
-run: $(CLASS_FILES)	$(JAVA) -cp $(BINDIR) imageFilter
+run: $(CLASS_FILES)	$(JAVA) -cp $(BINDIR) MeanFilterSerial MeanFilterParallel MedianFilterSerial MedianFilterParallel
 	
 clean:
 	rm $(BINDIR)/*.class
 	
 Filter_run:
-	java -cp bin imageFilter
+	java -cp bin MeanFilterSerial\
+	MeanFilterParallel\
+	MedianFilterSerial\
+	MedianFilterParallel
 	 
