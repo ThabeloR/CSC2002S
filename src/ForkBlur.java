@@ -20,7 +20,7 @@ public class ForkBlur extends RecursiveAction {
     private int mStart;
     private int mLength;
     private int[] mDestination;
-    private int mBlurWidth = 3; // Processing window size, should be odd.
+    private int mBlurWidth =3; // Processing window size, should be odd.
  
     public ForkBlur(int[] src, int start, int length, int[] dst) {
         mSource = src;
@@ -36,21 +36,24 @@ public class ForkBlur extends RecursiveAction {
 
         for (int index = mStart; index < mStart + mLength; index++) {
             // Calculate average.
-            float rt = 0, gt = 0, bt = 0;
+            float rt = 0, gt = 0, bt = 0, at = 0;
             for (int mi = -sidePixels; mi <= sidePixels; mi++) {
                 int mindex = Math.min(Math.max(mi + index, 0), mSource.length - 1);
                 int pixel = mSource[mindex];
+                at += (float)((pixel & 0xff) >> 24);
                 rt += (float) ((pixel & 0x00ff0000) >> 16);
                 gt += (float) ((pixel & 0x0000ff00) >> 8);
                 bt += (float) ((pixel & 0x000000ff) >> 0);
 
             }
+            at = at/mBlurWidth;
             rt = rt/mBlurWidth;
             gt = gt/mBlurWidth;
             bt = bt/mBlurWidth;
  
             // Re-assemble destination pixel.
             int dpixel = (0xff000000)
+                    | (((int) at) << 24)
                     | (((int) rt) << 16)
                     | (((int) gt) << 8)
                     | (((int) bt) << 0);
@@ -78,7 +81,7 @@ public class ForkBlur extends RecursiveAction {
         BufferedImage img = null;
         File  srcName = null;
         try{
-            srcName = new File("/home/thabelo/TSHTHA094_CSC2002S_PCP1/data/Test4.png");
+            srcName = new File("/home/thabelo/TSHTHA094_CSC2002S_PCP1/data/Test1.jpg");
             img = ImageIO.read(srcName);
           }catch(IOException e){
             System.out.println(e);
@@ -109,7 +112,6 @@ public class ForkBlur extends RecursiveAction {
         int[] src = srcImage.getRGB(0, 0, w, h, null, 0, w);
         int[] dst = new int[src.length];
         System.out.println("length of picture" + dst.length);
-        System.out.println(src);
 
         System.out.println("Array size is " + src.length);
         System.out.println("Threshold is " + sThreshold);
