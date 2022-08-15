@@ -26,9 +26,17 @@ run: $(CLASS_FILES)	$(JAVA) -cp $(BINDIR) MeanFilterSerial MeanFilterParallel Me
 clean:
 	rm $(BINDIR)/*.class
 	
-Filter_run:
-	java -cp bin MeanFilterSerial\
-	MeanFilterParallel\
-	MedianFilterSerial\
-	MedianFilterParallel
-	 
+
+runFilters: $(CLASS_FILES)
+	java -cp bin MeanFilterSerial $(argument)
+	java -cp bin MedianFilterSerial $(argument)
+	java -cp bin MeanFilterParallel $(argument)
+	java -cp bin MedianFilterParallel $(argument)
+runMeanFilterSerial: $(CLASS_FILES)
+	java -cp bin MeanFilterSerial $(argument)
+runMedianFilterSerial: $(CLASS_FILES)
+	java -cp bin MedianFilterSerial $(argument)
+runMeanFilterParallel: $(CLASS_FILES)
+	java -cp bin MeanFilterParallel $(argument)
+runMedianFilterParallel: $(CLASS_FILES)
+	java -cp bin MedianFilterParallel $(argument)

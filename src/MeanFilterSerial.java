@@ -3,106 +3,102 @@
   12 August 2022
  */
 
- //Imported library
-import java.util.Scanner;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import javax.imageio.ImageIO;
-public class MeanFilterSerial{
+ import java.awt.image.BufferedImage;
+ import java.io.File;
+ import javax.imageio.IIOException;
+ import javax.imageio.ImageIO;
+ 
+ public class MeanFilterSerial {
+ 
+   public static void main(String[] args) throws Exception {
+ 
+     File sourseFile;
+     File destinationFile;
+     int windowSize;
+ 
+     if (args.length != 3) {
+       System.out.println("Please enter three  parameters:<inputImageName> <outputImageName> <windowSize>");
+       System.exit(0);
+     } else {
+       sourseFile = new File(args[0]);
+       destinationFile = new File(args[1]);
+       windowSize = Integer.parseInt(args[2]);
+       if (windowSize % 2 == 0) {
+         System.out.println("This must be an odd, positive integer >=3");
+         System.exit(0);
+       }
+       try {
+         BufferedImage image = ImageIO.read(sourseFile);
+         System.out.println("Source image: " + sourseFile.getName());
+         // Call to start filter with the input value
+         BufferedImage filteredImage = meanFilter(image, windowSize);
+        // assign the new image
+         ImageIO.write(filteredImage, "png", destinationFile);
+         System.out.println("Output image: " + destinationFile.getName());
+       } catch (IIOException e) {
+         System.out.println(e);
+         System.exit(0);
+       }
+     }
+   }
+ 
+   public static BufferedImage meanFilter(BufferedImage sourceImage, int windowSize) {
+    //Benchmarking test starts here
+     long startTime = System.currentTimeMillis();
+ 
+     int width = sourceImage.getWidth();
+     int height = sourceImage.getHeight();
+     int windowWidth = (windowSize - 1) / 2;
+     int windowArea = windowSize * windowSize;
+ 
+     int pictureFile[][] = new int[height][width];
+     for (int i = 0; i < height; i++) {
+       for (int j = 0; j < width; j++) {
+         pictureFile[i][j] = sourceImage.getRGB(j, i);
+       }
+     }
+ 
+     int output[][] = new int[height][width];
+     
 
-    public static void main(String[] args) throws Exception {
-
-        Scanner scanner = new Scanner(System.in);
-
-        File srcFile;
-        File dstFile;
-        int windowWidth;
-
-        if (args.length == 0) {
-            String srcName = "MicrosoftTeams-image.png";
-            String dstName = "filtered"+srcName;
-            srcFile = new File(srcName);
-            dstFile = new File(dstName);
-            System.out.println("enter window width");
-            windowWidth = Integer.parseInt(scanner.nextLine());
-        } else {
-            srcFile = new File(args[0]);
-            dstFile = new File(args[1]);
-            windowWidth = Integer.parseInt(args[2]);
-        }
-
-        BufferedImage image = ImageIO.read(srcFile);
-        System.out.println("Source image: " + srcFile.getName());
-        ImageIO.write(runMeanFilter(image, windowWidth), "png", dstFile);
-
-
-    }
-
-    public static BufferedImage runMeanFilter(BufferedImage srcImage, int windowWidth) {
-
-        long startTime = System.currentTimeMillis();
-
-        int width = srcImage.getWidth();
-        int height = srcImage.getHeight();
-        int halfWindowWidth = (windowWidth-1)/2;
-        int windowArea = windowWidth*windowWidth;
-
-        int[] src = srcImage.getRGB(0, 0, width, height, null, 0, width);
-        int[] dst = new int[src.length];
-
-
-        int pictureFile[][] = new int [height][width];
-        for( int i = 0; i < height; i++ ){
-            for( int j = 0; j < width; j++ ){
-                pictureFile[i][j] = srcImage.getRGB(j,i);
-            }
-        }
-
-        int output [][] = new int [height][width];
-        System.out.println(height);
-
-        for (int h=1; h<height; h++) {
-            for (int w=1; w<width; w++) {
-                int sumr=0, sumg =0, sumb = 0;
-                //for vertical part of the window
-                for (int vert=-halfWindowWidth; vert<=halfWindowWidth; vert++) {
-                    //for horizontal part of the window
-                    for (int hori=-halfWindowWidth; hori<=halfWindowWidth; hori++) {
-                        //making show ignoring edges
-                        if((w+(vert)>=0 && h+(hori)>=0 && w+(vert)<width && h+(hori)<height)){
-                            int pixel=pictureFile[h+hori][w+vert];
-                            int rr=(pixel&0x00ff0000)>>16, rg=(pixel&0x0000ff00)>>8, rb=pixel&0x000000ff;
-                            sumr+=rr;
-                            sumg+=rg;
-                            sumb+=rb;
-                        }
-                    }
-                }
-
-                sumr/=windowArea; sumg/=windowArea; sumb/=windowArea;
-                int newPixel=0xff000000|(sumr<<16)|(sumg<<8)|sumb;
-                output[h][w] = newPixel;
-            }
-        }
-
-        //Turn the 2D array back into an image
-        BufferedImage theImage = new BufferedImage(
-                width,
-                height,
-                BufferedImage.TYPE_INT_RGB);
-        int value;
-        for(int y = 1; y<height; y++){
-            for(int x = 1; x<width; x++){
-                value = output[y][x] ;
-                theImage.setRGB(x, y, value);
-            }
-        }
-
-
-        long endTime = System.currentTimeMillis();
-
-        System.out.println("Image filter took " + (endTime - startTime) +
-                " milliseconds.");
-        return theImage;
-    }
-}
+     // goes through the picture 
+     for (int Y = 1; Y < height; Y++) {
+       for (int X = 1; X < width; X++) {
+         int Reds = 0, Greens = 0, Blues = 0;
+         //goes through the window
+         for (int V = -windowWidth; V <= windowWidth; V++) {
+           for (int H = -windowWidth; H <= windowWidth; H++) {
+             //edge cases
+             if (X + (V) >= 0 && Y + (H) >= 0 && X + (V) < width && Y + (H) < height){
+               int pixel = pictureFile[Y + H][X + V];
+               int Redpixel = (pixel & 0x00ff0000) >> 16, Greenpixel = (pixel & 0x0000ff00) >> 8, Bluepixel = pixel & 0x000000ff;
+               Reds += Redpixel;
+               Greens += Greenpixel;
+               Blues += Bluepixel;
+             }
+           }
+         }
+ 
+         Reds /= windowArea;
+         Greens /= windowArea;
+         Blues /= windowArea;
+         int newPixel = 0xff000000 | (Reds << 16) | (Greens << 8) | Blues;
+         output[Y][X] = newPixel;
+       }
+     }
+ 
+     //getting new image
+     BufferedImage newImage = new BufferedImage( width,height,BufferedImage.TYPE_INT_RGB);
+     int value;
+     for (int Y = 1; Y < height; Y++) {
+       for (int X = 1; X < width; X++) {
+         value = output[Y][X];
+         newImage.setRGB(X, Y, value);
+       }
+     }
+     // end of program run time bench-mark
+     long endTime = System.currentTimeMillis();
+     System.out.println("The program took " + (endTime - startTime) + " milliseconds.");
+     return newImage;
+   }
+ }

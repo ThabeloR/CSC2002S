@@ -29,114 +29,114 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-import java.util.Scanner;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveAction;
 import javax.imageio.ImageIO;
+import javax.imageio.IIOException;
 
 public class MeanFilterParallel extends RecursiveAction {
+    private int windowSize;
+    private int start;
+    private int[][] sourceImage;
+    private int length;
+    private int[][] newImage;
+    private int height;
+    private int width;
 
-    private File srcFile;
-    private File dstFile;
-    private int windowWidth;
-    private int mStart;
-    private int[][] mSource;
-    private int mLength;
-    private int[][] mDestination;
-    private int mHeight;
-    private int mWidth;
-
-    public MeanFilterParallel(int[][] src, int start, int length,int height,int width,  int[][] dst) {
-        mSource = src;
-        mStart = start;
-        mLength = length;
-        mDestination = dst;
-        mHeight = height;
-        mWidth = width;
+    public MeanFilterParallel(int[][] sourceImage, int start, int length,int height,int width,  int[][] newImage) {
+        this.sourceImage = sourceImage;
+        this.start = start;
+        this.length = length;
+        this.newImage = newImage;
+        this.height = height;
+        this.width= width;
     }
 
     // Average pixels from source, write results into destination.
     protected void computeDirectly() {
-        int sidePixels = (windowWidth- 1) / 2;
-        int halfWindowWidth = (windowWidth-1)/2;
-        int windowArea = windowWidth*windowWidth;
-        for (int h=mStart; h<mHeight; h++) {
-            for (int w=1; w<mWidth; w++) {
-                int sumr=0, sumg =0, sumb = 0;
-                for (int vert=-halfWindowWidth; vert<=halfWindowWidth; vert++) {
-                    for (int hori=-halfWindowWidth; hori<=halfWindowWidth; hori++) {
-                        if((w+(vert)>=0 && h+(hori)>=0 && w+(vert)<mWidth && h+(hori)<mHeight)){
-                            int pixel=mSource[h+hori][w+vert];
-                            int rr=(pixel&0x00ff0000)>>16, rg=(pixel&0x0000ff00)>>8, rb=pixel&0x000000ff;
-                            sumr+=rr;
-                            sumg+=rg;
-                            sumb+=rb;
-                        }
-                    }
+        int windowWidth = (windowSize-1)/2;
+        int windowArea = windowSize*windowSize;
+        for (int Y = 1; Y < height; Y++) {
+            for (int X = 1; X < width; X++) {
+              int Reds = 0, Greens = 0, Blues = 0;
+              //goes through the window
+              for (int V = -windowWidth; V <= windowWidth; V++) {
+                for (int H = -windowWidth; H <= windowWidth; H++) {
+                  //edge cases
+                  if (X + (V) >= 0 && Y + (H) >= 0 && X + (V) < width && Y + (H) < height){
+                    int pixel = sourceImage[Y + H][X + V];
+                    int Redpixel = (pixel & 0x00ff0000) >> 16, Greenpixel = (pixel & 0x0000ff00) >> 8, Bluepixel = pixel & 0x000000ff;
+                    Reds += Redpixel;
+                    Greens += Greenpixel;
+                    Blues += Bluepixel;
+                  }
                 }
+              }
+      
+              Reds /= windowArea;
+              Greens /= windowArea;
+              Blues /= windowArea;
+              int newPixel = 0xff000000 | (Reds << 16) | (Greens << 8) | Blues;
+              newImage[Y][X] = newPixel;
 
-                sumr/=windowArea; sumg/=windowArea; sumb/=windowArea;
-                int newPixel=0xff000000|(sumr<<16)|(sumg<<8)|sumb;
-                mDestination[h][w] = newPixel;
-            }
+          }
         }
     }
-    protected static int sThreshold = 10000;
+    protected static int sThreshold = 50000;
 
     @Override
     protected void compute() {
-        if (mHeight*mWidth < sThreshold) {
+        if (height*width< sThreshold) {
             computeDirectly();
             return;
         }
 
-        int split = mHeight / 2;
+        int split = height / 2;
 
         //MeanFilterParallel(int[][] src, int start, int length,int height,int width,  int[][] dst)
-        invokeAll(new MeanFilterParallel(mSource,mStart,mLength- split,mHeight,mWidth,mDestination),
-        new MeanFilterParallel(mSource,mStart+split,mLength- split,mHeight,mWidth,mDestination));
+        invokeAll(new MeanFilterParallel(sourceImage,start,length- split,height,width,newImage),
+        new MeanFilterParallel(sourceImage,start+split,length- split,height,width,newImage));
     }
 
     // Plumbing follows.
 
     public static void main(String[] args) throws Exception {
-
-        Scanner scanner = new Scanner(System.in);
-        File srcFile;
-        File dstFile;
-        int windowWidth;
-
-        if (args.length == 0) {
-            String srcName = "MicrosoftTeams-image.png";
-            String dstName = "filtered"+srcName;
-            srcFile = new File(srcName);
-            dstFile = new File(dstName);
-            System.out.println("enter window width");
-            windowWidth = Integer.parseInt(scanner.nextLine());
+ 
+        File sourseFile;
+        File destinationFile;
+        int windowSize;
+    
+        if (args.length != 3) {
+          System.out.println("Please enter three  parameters:<inputImageName> <outputImageName> <windowSize>");
+          System.exit(0);
         } else {
-            srcFile = new File(args[0]);
-            dstFile = new File(args[1]);
-            windowWidth = Integer.parseInt(args[2]);
+          sourseFile = new File(args[0]);
+          destinationFile = new File(args[1]);
+          windowSize = Integer.parseInt(args[2]);
+          if (windowSize % 2 == 0) {
+            System.out.println("This must be an odd, positive integer >=3");
+            System.exit(0);
+          }
+          try {
+            BufferedImage image = ImageIO.read(sourseFile);
+            System.out.println("Source image: " + sourseFile.getName());
+            // Call to start filter with the input value
+            BufferedImage filteredImage = meanFilter(image, windowSize);
+           // assign the new image
+            ImageIO.write(filteredImage, "png", destinationFile);
+            System.out.println("Output image: " + destinationFile.getName());
+          } catch (IIOException e) {
+            System.out.println(e);
+            System.exit(0);
+          }
         }
-
-
-        BufferedImage image = ImageIO.read(srcFile);
-
-    }
-
-    public static BufferedImage runMeanFilter(BufferedImage srcImage, int windowWidth) {
-
-
-
+      }
+    
+    public static BufferedImage meanFilter(BufferedImage srcImage, int windowSize) {
         int width = srcImage.getWidth();
         int height = srcImage.getHeight();
-        int halfWindowWidth = (windowWidth-1)/2;
-        int windowArea = windowWidth*windowWidth;
-
-        int[] src = srcImage.getRGB(0, 0, width, height, null, 0, width);
-        int[] dst = new int[src.length];
 
        int pictureFile[][] = new int [height][width];
         for( int i = 0; i < height; i++ ){
@@ -153,21 +153,17 @@ public class MeanFilterParallel extends RecursiveAction {
         pool.invoke(meanFilter);
         long endTime = System.currentTimeMillis();
 
-        System.out.println("Image blur took " + (endTime - startTime) +
-                " milliseconds.");
-
-        BufferedImage theImage = new BufferedImage(
-                width,
-                height,
-                BufferedImage.TYPE_INT_RGB);
+        System.out.println("Filter took " + (endTime - startTime) +" milliseconds.");
+        // Get new new image
+        BufferedImage newImage = new BufferedImage(width,height,BufferedImage.TYPE_INT_RGB);
         int value;
         for(int y = 1; y<height; y++){
             for(int x = 1; x<width; x++){
                 value = output[y][x] ;
-                theImage.setRGB(x, y, value);
+                newImage.setRGB(x, y, value);
             }
         }
-        return theImage;
+        return newImage;
     }
 }
 
