@@ -41,19 +41,19 @@ import javax.imageio.ImageIO;
 public class MedianFilterParallel extends RecursiveAction {
   private int windowWidth;
   private int mStart;
-  private int[][] mSource;
+  private int[][] sourceImage;
   private int mLength;
-  private int[][] mDestination;
-  private int mHeight;
-  private int mWidth;
+  private int[][] newImage;
+  private int height;
+  private int width;
 
   public MedianFilterParallel(int[][] src,int start,int length,int height,int width,int[][] dst,int windowWidth) {
-    mSource = src;
+    sourceImage = src;
     mStart = start;
     mLength = length;
-    mDestination = dst;
-    mHeight = height;
-    mWidth = width;
+    newImage = dst;
+    this.height = height;
+    this.width = width;
     this.windowWidth = windowWidth;
   }
 
@@ -62,67 +62,57 @@ public class MedianFilterParallel extends RecursiveAction {
     int halfWindowWidth = (windowWidth - 1) / 2;
     int windowArea = windowWidth * windowWidth;
 
-    for (int h = mStart; h < mStart + mLength; h++) {
-      for (int w = 1; w < mWidth; w++) {
+    for (int Y = 1; Y < height; Y++) {
+      for (int X = 1; X < width; X++) {
         ArrayList<Integer> red = new ArrayList<Integer>();
         ArrayList<Integer> green = new ArrayList<Integer>();
         ArrayList<Integer> blue = new ArrayList<Integer>();
-
-        for (int vert = -halfWindowWidth; vert <= halfWindowWidth; vert++) {
-          for (int hori = -halfWindowWidth; hori <= halfWindowWidth; hori++) {
-            if (
-              (
-                w + (vert) >= 0 &&
-                h + (hori) >= 0 &&
-                w + (vert) < mWidth &&
-                h + (hori) < mHeight
-              )
-            ) {
-              int pixel = mSource[h + hori][w + vert];
-              int rr = (pixel & 0x00ff0000) >> 16, rg =
-                (pixel & 0x0000ff00) >> 8, rb = pixel & 0x000000ff;
-              red.add(rr);
-              green.add(rg);
-              blue.add(rb);
+        //goes through the window
+        for (int V = -halfWindowWidth; V <= halfWindowWidth; V++) {
+          for (int H = -halfWindowWidth; H <= halfWindowWidth; H++) {
+            //edge cases
+            if ((X + (V) >= 0 && Y + (H) >= 0 && X + (V) < width && Y + (H) < height)) {
+              int piXel = sourceImage[Y + H][X + V];
+              int RedpiXel = (piXel & 0X00ff0000) >> 16, GreenpiXel =(piXel & 0X0000ff00) >> 8, BluepiXel = piXel & 0X000000ff;
+              red.add(RedpiXel);
+              green.add(GreenpiXel);
+              blue.add(BluepiXel);
             }
           }
         }
-
         Collections.sort(red);
         Collections.sort(green);
         Collections.sort(blue);
-        int mid = (windowArea + 1) / 2;
-        if (mid * 2 <= red.size() + 1) {
-          int redc = red.get(mid);
-          int bluec = blue.get(mid);
-          int greenc = green.get(mid);
+        int median = (windowArea + 1) / 2;
+        if (median * 2 <= red.size() + 1) {
+          int Reds = red.get(median);
+          int Blues = blue.get(median);
+          int Greens = green.get(median);
 
-          int newPixel = 0xff000000 | (redc << 16) | (greenc << 8) | bluec;
-          mDestination[h][w] = newPixel;
+          int newPiXel = 0Xff000000 | (Reds << 16) | (Greens << 8) | Blues;
+          newImage[Y][X] = newPiXel;
         } else {
-          int newPixel = 0xff000000;
-          mDestination[h][w] = newPixel;
+          int newPiXel = 0Xff000000;
+          newImage[Y][X] = newPiXel;
         }
       }
     }
   }
 
-  protected static int sThreshold = 94000;
+  protected static int sThreshold = 50000;
 
   @Override
   protected void compute() {
-      if (mLength * mWidth < sThreshold) {
+      if (mLength < sThreshold) {
           computeDirectly();
 
           return;
       }
 
       int split = mLength / 2;
-
-    //MeanFilterParallel(int[][] src, int start, int length,int height,int width,  int[][] dst)
     invokeAll(
-      new MedianFilterParallel(mSource,mStart,mLength - split,mHeight,mWidth,mDestination,windowWidth),
-      new MedianFilterParallel( mSource,mStart + split,  mLength - split,mHeight,mWidth,mDestination,windowWidth));
+      new MedianFilterParallel(sourceImage,mStart,mLength - split,height,width,newImage,windowWidth),
+      new MedianFilterParallel( sourceImage,mStart + split,  mLength - split,height,width,newImage,windowWidth));
   }
 
   // Plumbing follows.
@@ -148,7 +138,7 @@ public class MedianFilterParallel extends RecursiveAction {
         BufferedImage image = ImageIO.read(sourseFile);
         System.out.println("Source image: " + sourseFile.getName());
         // Call to start filter with the input value
-        BufferedImage filteredImage = runMeanFilter(image, windowSize);
+        BufferedImage filteredImage = Filter(image, windowSize);
        // assign the new image
         ImageIO.write(filteredImage, "png", destinationFile);
         System.out.println("Output image: " + destinationFile.getName());
@@ -159,10 +149,7 @@ public class MedianFilterParallel extends RecursiveAction {
     }
   }
 
-  public static BufferedImage runMeanFilter(
-    BufferedImage srcImage,
-    int windowWidth
-  ) {
+  public static BufferedImage Filter(BufferedImage srcImage,int windowWidth) {
     int width = srcImage.getWidth();
     int height = srcImage.getHeight();
 
@@ -173,39 +160,27 @@ public class MedianFilterParallel extends RecursiveAction {
       }
     }
     int output[][] = new int[height][width];
-    MedianFilterParallel meanFilter = new MedianFilterParallel(
-      pictureFile,
-      0,
-      height,
-      height,
-      width,
-      output,
-      windowWidth
-    );
+    MedianFilterParallel MedianFilter = new MedianFilterParallel(pictureFile,0,height,height, width, output,windowWidth);
 
     ForkJoinPool pool = new ForkJoinPool();
 
     long startTime = System.currentTimeMillis();
-    pool.invoke(meanFilter);
+    pool.invoke(MedianFilter);
     long endTime = System.currentTimeMillis();
 
     //Turn the 2D array back into an image
-    BufferedImage theImage = new BufferedImage(
-      width,
-      height,
-      BufferedImage.TYPE_INT_RGB
-    );
+    BufferedImage newimage = new BufferedImage(width,height,BufferedImage.TYPE_INT_RGB);
     int value;
     for (int y = 1; y < height; y++) {
       for (int x = 1; x < width; x++) {
         value = output[y][x];
-        theImage.setRGB(x, y, value);
+        newimage.setRGB(x, y, value);
       }
     }
 
     System.out.println(
-            "Image filter took \n" + (endTime - startTime) + " \nmilliseconds."
+            "Meadian fliter took " + (endTime - startTime) + " milliseconds."
     );
-    return theImage;
+    return newimage;
   }
 }

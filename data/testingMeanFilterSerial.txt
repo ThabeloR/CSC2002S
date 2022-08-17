@@ -1,0 +1,16 @@
+java -cp bin MeanFilterSerial /home/thabelo/TSHTHA094_CSC2002S_PCP1/data/main.png /home/thabelo/TSHTHA094_CSC2002S_PCP1/data/mainout.png 3
+Source image: main.png
+mean filter took 120 milliseconds.
+Output image: mainout.png
+java -cp bin MeanFilterSerial /home/thabelo/TSHTHA094_CSC2002S_PCP1/data/main.png /home/thabelo/TSHTHA094_CSC2002S_PCP1/data/mainout.png 11
+Source image: main.png
+mean filter took 246 milliseconds.
+Output image: mainout.png
+java -cp bin MeanFilterSerial /home/thabelo/TSHTHA094_CSC2002S_PCP1/data/main.png /home/thabelo/TSHTHA094_CSC2002S_PCP1/data/mainout.png 15
+Source image: main.png
+mean filter took 507 milliseconds.
+Output image: mainout.png
+java -cp bin MeanFilterSerial /home/thabelo/TSHTHA094_CSC2002S_PCP1/data/main.png /home/thabelo/TSHTHA094_CSC2002S_PCP1/data/mainout.png 25
+Source image: main.png
+mean filter took 801 milliseconds.
+Output image: mainout.png

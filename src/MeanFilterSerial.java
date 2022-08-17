@@ -98,7 +98,7 @@
      }
      // end of program run time bench-mark
      long endTime = System.currentTimeMillis();
-     System.out.println("The program took " + (endTime - startTime) + " milliseconds.");
+     System.out.println("mean filter took " + (endTime - startTime) + " milliseconds.");
      return newImage;
    }
  }

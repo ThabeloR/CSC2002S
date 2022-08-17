@@ -1,0 +1,16 @@
+java -cp bin MedianFilterSerial /home/thabelo/TSHTHA094_CSC2002S_PCP1/data/main.png /home/thabelo/TSHTHA094_CSC2002S_PCP1/data/mainout.png 3
+Source image: main.png
+medianFilter took 641 milliseconds.
+Output image: mainout.png
+java -cp bin MedianFilterSerial /home/thabelo/TSHTHA094_CSC2002S_PCP1/data/main.png /home/thabelo/TSHTHA094_CSC2002S_PCP1/data/mainout.png 11
+Source image: main.png
+medianFilter took 13884 milliseconds.
+Output image: mainout.png
+java -cp bin MedianFilterSerial /home/thabelo/TSHTHA094_CSC2002S_PCP1/data/main.png /home/thabelo/TSHTHA094_CSC2002S_PCP1/data/mainout.png 15
+Source image: main.png
+medianFilter took 27099 milliseconds.
+Output image: mainout.png
+java -cp bin MedianFilterSerial /home/thabelo/TSHTHA094_CSC2002S_PCP1/data/main.png /home/thabelo/TSHTHA094_CSC2002S_PCP1/data/mainout.png 25
+Source image: main.png
+medianFilter took 92037 milliseconds.
+Output image: mainout.png
